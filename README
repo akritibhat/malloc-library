@@ -32,14 +32,3 @@ ArenaInfo {
 If arena is already initialised for a thread, using __thread, we make that arena available to the thread.
 Arena locks are used to avoid collision in same arena. 
 Locks are also placed around sbrk.
-
-Conventions:
-mallocarena.c has malloc functin
-freearena.c has free function
-
-Reference:
-
-https://stackoverflow.com/questions/6563120/what-does-posix-memalign-memalign-do
-https://linux.die.net/man/3/memalign
-http://www.gnu.org/software/libc/manual/html_node/Aligned-Memory-Blocks.html
-
