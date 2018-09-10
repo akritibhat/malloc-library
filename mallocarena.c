@@ -1,94 +1,56 @@
-void* arenamalloc(struct ArenaInfo* arena, size_t size);
+void free(void * ptr) {
 
-__thread struct ArenaInfo *arrThread = NULL;
+  if (ptr == NULL) {
+    return;
+  } else {
+    pthread_mutex_lock( & arrThread - > arrlock);
+    arrThread - > freeReq = arrThread - > freeReq + 1;
+    arrThread - > freeBlocks = arrThread - > freeBlocks + 1;
+    MyNode * temp = arrThread - > ghead;
+    MyNode * final = NULL;
+    while (temp != NULL) {
+      if (temp - > sb_pointer == ptr) {
+        final = temp;
+        break;
+      }
+      temp = temp - > next;
+    }
+    if (final == NULL || (final - > freeMem == 0)) {
+      pthread_mutex_unlock( & arrThread - > arrlock);
+      return;
+    } else {
+      final - > freeMem = 0;
+      final - > occupied = 0;
+    }
+  }
+  joinBuddy();
+  pthread_mutex_unlock( & arrThread - > arrlock);
 
-
-ArenaInfo* getLastassociatedArena(pid_t pidt);
-void getArena(struct ArenaInfo* arena);
-
-
-void * malloc(size_t size)
-{
-	pthread_mutex_lock(&mutex);
-	if(size==0){
- 	 pthread_mutex_unlock(&mutex);
- 	return NULL;
-	}
-	int tempArena;
-	ArenaInfo* arrTemp;
-	
-	if(arrThread==NULL){
-	//printf("arr null for %d \n", size);
-
-	if(arenaHead==NULL){
-	//printf("areana head is null \n");
-	cores=get_nprocs();
-	initialiseArena(cores);
-	arrThread=arenaHead;
-	tempArena=arenaNum%cores;
-	}
-
-	else
-	{
-	//	printf("in arena ger");
-	arenaNum++;
-	int tempArena=arenaNum%cores;
-	if(tempArena==0)
-	tempArena=cores;
-	arrThread=arenaHead;
-	for(int i=1;i<=tempArena-1;i++)
-	 arrThread=arrThread->next;
-	}
-	
-	}
-	//else
-	//printf( " arena already initialsed for size %d", size);
-	pthread_mutex_unlock(&mutex);
-
-	
-	void *ptr= arenamalloc(arrThread, size);
-	
-	return ptr;
-	
 }
 
+void joinBuddy() {
 
-void* arenamalloc(struct ArenaInfo* arena, size_t size)
-{
-  	pthread_mutex_lock(&arrThread->arrlock);
-	arena->mallocReq = arena->mallocReq+1;
-	//printf("\n ***************************** working in arena %d for malloc %d and arena address %p ***************** ", arena->numArena , 		size , arena);
-	
-	
-	if(size==0){
- 	 pthread_mutex_unlock(&arena->arrlock);
- 	return NULL;
-	}
-    	void * myPointer;
-	arena->usedBlocks= arena->usedBlocks+1;
-	arena->freeBlocks = arena->freeBlocks-1;
-  	if(arena->ghead==NULL){  //if head node is not initialized, call kernel for space
-	//printf("arena head is hull");
-   	spaceFromKernel(arena, size);
- 	myPointer=searchNodes(arena, size);
-	if(myPointer==NULL){
-	pthread_mutex_unlock(&arena->arrlock);
-	return NULL;
-	}
- 	}
- 	else{
-	myPointer=searchNodes(arena, size); //seach for a free node
-	if(myPointer==NULL){
-		spaceFromKernel(arena, size);
-		myPointer=searchNodes(arena,size);
-		}
-	}
+  MyNode * n, * nnext;
+  n = arrThread - > ghead;
+  nnext = n - > next;
+  while (n != NULL) {
+    if (n - > next != NULL && n - > freeMem == 0) {
 
+      MyNode * temp = n - > next;
+      long long int val = n - > sb_pointer;
+      long long int val2 = temp - > sb_pointer;
 
-  	pthread_mutex_unlock(&arrThread->arrlock);
-   	return myPointer;
+      if ((temp - > freeMem == 0) && (n - > size == temp - > size) && ((val ^ val2) == temp - > size)) {
+
+        n - > size = n - > size * 2;
+        n - > next = temp - > next;
+        if (arrThread - > endNode == temp) {
+          arrThread - > endNode = n;
+        }
+        n = arrThread - > ghead;
+        continue;
+      }
+    }
+    n = n - > next;
+  }
 }
-
-
-
-
