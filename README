@@ -1,0 +1,45 @@
+
+Data Structure Used: Linked List
+
+Created a linked list with Node : MyNode
+MyNode contains the meta data about memory blocks
+  1.freeMem- indicator if the memory is free
+	2. size- size of the block
+	3. occupied- memory used from the block (size-occupied gives us internal fragmentation)
+	4. *sb_pointer- address of the memory block
+	5. *next - pointer to the next node
+
+Implemented buddy allocation.
+
+When first malloc request is made , Arenas are initialised which are equal to the number of cores.
+This makes it faster than HW3.
+
+Used structure ArenaInfo to maintain Arena Data.
+
+ArenaInfo {
+   int numberOfArena; 
+   int mallocReq;  
+   int freeReq;  
+   int arenaSize;     
+   int usedBlocks;	
+   int freeBlocks;
+   struct arenaInfo *next;	
+   pthread_mutex_t arrlock;
+   struct MyNode* ghead;
+   struct MyNode* endNode;
+};
+
+If arena is already initialised for a thread, using __thread, we make that arena available to the thread.
+Arena locks are used to avoid collision in same arena. 
+Locks are also placed around sbrk.
+
+Conventions:
+mallocarena.c has malloc functin
+freearena.c has free function
+
+Reference:
+
+https://stackoverflow.com/questions/6563120/what-does-posix-memalign-memalign-do
+https://linux.die.net/man/3/memalign
+http://www.gnu.org/software/libc/manual/html_node/Aligned-Memory-Blocks.html
+
